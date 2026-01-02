@@ -3,15 +3,16 @@ import { X, FileText, Calendar, Users, DollarSign, TrendingUp, Eye } from 'lucid
 interface LoanDetailsModalProps {
   onClose: () => void
   loan: {
-    id: number
+    id?: string
     borrower: string
-    loanId: string
-    amount: string
-    remaining: string
+    loan_id?: string
+    loanId?: string
+    amount: number | string
+    remaining?: number | string
     price: number
     spread: number
     sector: string
-    views: number
+    views?: number
   }
 }
 
@@ -33,12 +34,14 @@ export default function LoanDetailsModal({ onClose, loan }: LoanDetailsModalProp
           <div className="loan-details-header">
             <div>
               <h3>{loan.borrower}</h3>
-              <p className="loan-id">{loan.loanId}</p>
+              <p className="loan-id">{loan.loan_id || loan.loanId}</p>
             </div>
-            <div className="loan-views">
-              <Eye className="views-icon" />
-              {loan.views} views
-            </div>
+            {loan.views !== undefined && (
+              <div className="loan-views">
+                <Eye className="views-icon" />
+                {loan.views} views
+              </div>
+            )}
           </div>
 
           <div className="details-grid">
@@ -46,16 +49,26 @@ export default function LoanDetailsModal({ onClose, loan }: LoanDetailsModalProp
               <DollarSign className="detail-card-icon" />
               <div>
                 <div className="detail-card-label">Total Amount</div>
-                <div className="detail-card-value">{loan.amount}</div>
+                <div className="detail-card-value">
+                  {typeof loan.amount === 'number' 
+                    ? `$${(loan.amount / 1000000).toFixed(0)}M`
+                    : loan.amount}
+                </div>
               </div>
             </div>
-            <div className="detail-card">
-              <DollarSign className="detail-card-icon" />
-              <div>
-                <div className="detail-card-label">Remaining</div>
-                <div className="detail-card-value">{loan.remaining}</div>
+            {loan.remaining && (
+              <div className="detail-card">
+                <DollarSign className="detail-card-icon" />
+                <div>
+                  <div className="detail-card-label">Remaining</div>
+                  <div className="detail-card-value">
+                    {typeof loan.remaining === 'number'
+                      ? `$${(loan.remaining / 1000000).toFixed(0)}M`
+                      : loan.remaining}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
             <div className="detail-card">
               <TrendingUp className="detail-card-icon" />
               <div>

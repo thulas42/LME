@@ -49,10 +49,15 @@ export default function NewApplicationModal({ onClose, onStart }: NewApplication
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (validateForm()) {
-      onStart(formData)
+      try {
+        onStart(formData)
+      } catch (error: any) {
+        console.error('Error creating application:', error)
+        alert(error.message || 'Failed to create application')
+      }
     }
   }
 

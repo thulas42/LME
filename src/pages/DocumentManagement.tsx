@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, FileText, Download, Upload, Sparkles, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import DocumentTemplates from '../components/DocumentTemplates'
 import DocumentLibrary from '../components/DocumentLibrary'
@@ -9,15 +9,73 @@ export default function DocumentManagement() {
   const [showUpload, setShowUpload] = useState(false)
   const [showGenerate, setShowGenerate] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [documentStats, setDocumentStats] = useState({
+    active: 0,
+    pending: 0,
+    requiresUpdate: 0,
+  })
 
-  const handleUpload = (file: File, metadata: any) => {
-    console.log('Uploading document:', file.name, metadata)
-    // In a real app, this would upload the file
+  useEffect(() => {
+    fetchDocumentStats()
+  }, [])
+
+  const fetchDocumentStats = async () => {
+    try {
+      const { documentsAPI } = await import('../services/api')
+      const response = await documentsAPI.getStats()
+      setDocumentStats({
+        active: response.data.total || 0,
+        pending: response.data.pending || 0,
+        requiresUpdate: response.data.review || 0,
+      })
+    } catch (error) {
+      console.error('Error fetching document stats:', error)
+    }
   }
 
-  const handleGenerate = (data: any) => {
-    console.log('Generating document:', data)
-    // In a real app, this would generate the document
+  const handleUpload = async (file: File, metadata: any) => {
+    try {
+      const { documentsAPI } = await import('../services/api')
+      const response = await documentsAPI.upload({
+        name: metadata.name || file.name,
+        category: metadata.category,
+        dealId: metadata.dealId,
+      })
+      console.log('Document uploaded:', response.data)
+      alert('Document uploaded successfully!')
+      await fetchDocumentStats()
+    } catch (error: any) {
+      console.error('Error uploading document:', error)
+      alert(error.message || 'Failed to upload document')
+    }
+  }
+
+  const handleGenerate = async (data: any) => {
+    try {
+      const { documentsAPI } = await import('../services/api')
+      // Find template ID by name
+      const templatesResponse = await documentsAPI.getTemplates()
+      const template = templatesResponse.data.find((t: any) => t.name === data.template)
+      
+      if (!template) {
+        throw new Error('Template not found')
+      }
+
+      const response = await documentsAPI.generate({
+        templateId: template.id,
+        dealId: data.dealId,
+        borrowerName: data.borrowerName,
+        loanAmount: parseFloat(data.loanAmount),
+        currency: data.currency,
+        loanType: data.loanType,
+      })
+      console.log('Document generated:', response.data)
+      alert('Document generated successfully!')
+      await fetchDocumentStats()
+    } catch (error: any) {
+      console.error('Error generating document:', error)
+      alert(error.message || 'Failed to generate document')
+    }
   }
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +134,7 @@ export default function DocumentManagement() {
             <CheckCircle />
           </div>
           <div className="stat-info">
-            <span className="stat-value">156</span>
+            <span className="stat-value">{documentStats.active}</span>
             <span className="stat-label">Active Documents</span>
           </div>
         </div>
@@ -85,7 +143,7 @@ export default function DocumentManagement() {
             <Clock />
           </div>
           <div className="stat-info">
-            <span className="stat-value">12</span>
+            <span className="stat-value">{documentStats.pending}</span>
             <span className="stat-label">Pending Review</span>
           </div>
         </div>
@@ -94,7 +152,7 @@ export default function DocumentManagement() {
             <AlertTriangle />
           </div>
           <div className="stat-info">
-            <span className="stat-value">3</span>
+            <span className="stat-value">{documentStats.requiresUpdate}</span>
             <span className="stat-label">Requires Update</span>
           </div>
         </div>

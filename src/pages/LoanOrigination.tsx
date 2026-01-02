@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Sparkles, CheckCircle, Clock, AlertCircle, FileText, Users, DollarSign } from 'lucide-react'
 import OriginationWizard from '../components/OriginationWizard'
 import OriginationPipeline from '../components/OriginationPipeline'
@@ -14,10 +14,25 @@ export default function LoanOrigination() {
     setShowNewApplication(true)
   }
 
-  const handleStartApplication = (applicationData: any) => {
-    console.log('Starting new application:', applicationData)
-    setShowNewApplication(false)
-    setHasActiveApplication(true)
+  const handleStartApplication = async (applicationData: any) => {
+    try {
+      const { applicationsAPI } = await import('../services/api')
+      const response = await applicationsAPI.create({
+        borrowerName: applicationData.borrowerName,
+        borrowerType: applicationData.borrowerType,
+        loanAmount: parseFloat(applicationData.loanAmount),
+        currency: applicationData.currency,
+        loanType: applicationData.loanType,
+        sector: applicationData.sector,
+        loanPurpose: applicationData.loanPurpose,
+      })
+      console.log('Application created:', response.data)
+      setShowNewApplication(false)
+      setHasActiveApplication(true)
+    } catch (error: any) {
+      console.error('Error creating application:', error)
+      alert(error.message || 'Failed to create application')
+    }
   }
 
   return (
@@ -57,7 +72,7 @@ export default function LoanOrigination() {
             <span className="stat-title">Applications</span>
           </div>
           <div className="stat-card-body">
-            <div className="stat-value">24</div>
+            <div className="stat-value">{stats.applications}</div>
             <div className="stat-change up">+5 this week</div>
           </div>
         </div>
@@ -67,7 +82,7 @@ export default function LoanOrigination() {
             <span className="stat-title">Avg. Processing</span>
           </div>
           <div className="stat-card-body">
-            <div className="stat-value">3.2 days</div>
+            <div className="stat-value">{stats.avgProcessing}</div>
             <div className="stat-change up">-40% faster</div>
           </div>
         </div>
@@ -77,7 +92,7 @@ export default function LoanOrigination() {
             <span className="stat-title">Approval Rate</span>
           </div>
           <div className="stat-card-body">
-            <div className="stat-value">68%</div>
+            <div className="stat-value">{stats.approvalRate}%</div>
             <div className="stat-change up">+12% improvement</div>
           </div>
         </div>

@@ -1,41 +1,36 @@
+import { useEffect, useState } from 'react'
 import { FileText, Download, Sparkles, CheckCircle } from 'lucide-react'
-
-const templates = [
-  {
-    id: 1,
-    name: 'LMA Term Loan Agreement',
-    category: 'Standard',
-    version: '2024.1',
-    compliant: true,
-    usage: 156,
-  },
-  {
-    id: 2,
-    name: 'Revolving Credit Facility',
-    category: 'Standard',
-    version: '2024.1',
-    compliant: true,
-    usage: 89,
-  },
-  {
-    id: 3,
-    name: 'Syndicated Loan Agreement',
-    category: 'Standard',
-    version: '2024.1',
-    compliant: true,
-    usage: 124,
-  },
-  {
-    id: 4,
-    name: 'Green Loan Agreement',
-    category: 'Specialized',
-    version: '2024.2',
-    compliant: true,
-    usage: 45,
-  },
-]
+import { documentsAPI } from '../services/api'
 
 export default function DocumentTemplates() {
+  const [templates, setTemplates] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchTemplates()
+  }, [])
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await documentsAPI.getTemplates()
+      setTemplates(response.data)
+    } catch (error) {
+      console.error('Error fetching templates:', error)
+      setTemplates([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGenerate = (template: any) => {
+    console.log('Generate document from template:', template.name)
+    // This would trigger the generate modal
+  }
+
+  const handleDownload = (template: any) => {
+    console.log('Downloading template:', template.name)
+    // In a real app, this would download the template file
+  }
   return (
     <div className="card">
       <div className="card-header">
@@ -43,50 +38,54 @@ export default function DocumentTemplates() {
         <span className="card-subtitle">LMA-compliant templates</span>
       </div>
       <div className="card-body">
-        <div className="template-list">
-          {templates.map((template) => (
-            <div key={template.id} className="template-item">
-              <div className="template-header">
-                <FileText className="template-icon" />
-                <div className="template-info">
-                  <div className="template-name">{template.name}</div>
-                  <div className="template-meta">
-                    <span className="template-category">{template.category}</span>
-                    <span className="template-version">v{template.version}</span>
+        {loading ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading templates...
+          </div>
+        ) : templates.length === 0 ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            No templates available
+          </div>
+        ) : (
+          <div className="template-list">
+            {templates.map((template) => (
+              <div key={template.id} className="template-item">
+                <div className="template-header">
+                  <FileText className="template-icon" />
+                  <div className="template-info">
+                    <div className="template-name">{template.name}</div>
+                    <div className="template-meta">
+                      <span className="template-category">{template.category}</span>
+                      <span className="template-version">v{template.version}</span>
+                    </div>
+                  </div>
+                  {template.compliant === 1 && (
+                    <CheckCircle className="compliant-icon" />
+                  )}
+                </div>
+                <div className="template-footer">
+                  <span className="template-usage">Used {template.usage_count || 0} times</span>
+                  <div className="template-actions">
+                    <button
+                      className="btn-icon-only"
+                      onClick={() => handleGenerate(template)}
+                      title="Generate from template"
+                    >
+                      <Sparkles />
+                    </button>
+                    <button
+                      className="btn-icon-only"
+                      onClick={() => handleDownload(template)}
+                      title="Download template"
+                    >
+                      <Download />
+                    </button>
                   </div>
                 </div>
-                {template.compliant && (
-                  <CheckCircle className="compliant-icon" />
-                )}
               </div>
-              <div className="template-footer">
-                <span className="template-usage">Used {template.usage} times</span>
-                <div className="template-actions">
-                  <button
-                    className="btn-icon-only"
-                    onClick={() => {
-                      console.log('Generate document from template:', template.name)
-                      // In a real app, this would open the generate modal
-                    }}
-                    title="Generate from template"
-                  >
-                    <Sparkles />
-                  </button>
-                  <button
-                    className="btn-icon-only"
-                    onClick={() => {
-                      console.log('Downloading template:', template.name)
-                      // In a real app, this would download the template
-                    }}
-                    title="Download template"
-                  >
-                    <Download />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

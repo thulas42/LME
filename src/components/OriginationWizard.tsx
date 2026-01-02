@@ -24,9 +24,19 @@ export default function OriginationWizard() {
     }
   }
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (currentStep < allSteps.length) {
-      setCurrentStep(currentStep + 1)
+      const newStep = currentStep + 1
+      setCurrentStep(newStep)
+      
+      // Update application in backend if we have an application ID
+      // This would typically come from props or context
+      try {
+        // In a real app, you'd get the application ID from props/context
+        // await applicationsAPI.update(applicationId, { currentStep: newStep })
+      } catch (error) {
+        console.error('Error updating application step:', error)
+      }
     }
   }
   return (

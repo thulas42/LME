@@ -1,36 +1,26 @@
+import { useEffect, useState } from 'react'
 import { FileText, Calendar, User, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
-
-const documents = [
-  {
-    id: 1,
-    name: 'TechCorp Term Loan Agreement',
-    deal: 'TechCorp Industries - $50M',
-    status: 'approved',
-    lastModified: '2024-01-15',
-    modifiedBy: 'John Smith',
-    version: 'v2.3',
-  },
-  {
-    id: 2,
-    name: 'GreenEnergy Credit Facility',
-    deal: 'GreenEnergy Solutions - $75M',
-    status: 'pending',
-    lastModified: '2024-01-14',
-    modifiedBy: 'Sarah Johnson',
-    version: 'v1.8',
-  },
-  {
-    id: 3,
-    name: 'InfraBuild Syndicated Agreement',
-    deal: 'InfraBuild Ltd - $120M',
-    status: 'review',
-    lastModified: '2024-01-13',
-    modifiedBy: 'Michael Chen',
-    version: 'v3.1',
-  },
-]
+import { documentsAPI } from '../services/api'
 
 export default function DocumentLibrary() {
+  const [documents, setDocuments] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDocuments()
+  }, [])
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await documentsAPI.getAll()
+      setDocuments(response.data)
+    } catch (error) {
+      console.error('Error fetching documents:', error)
+      setDocuments([])
+    } finally {
+      setLoading(false)
+    }
+  }
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -55,41 +45,55 @@ export default function DocumentLibrary() {
         <h2>Document Library</h2>
       </div>
       <div className="card-body">
-        <div className="document-list">
-          {documents.map((doc) => {
-            const StatusIcon = getStatusIcon(doc.status)
-            return (
-              <div
-                key={doc.id}
-                className={`document-item ${doc.status}`}
-                onClick={() => handleDocumentClick(doc)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="document-header">
-                  <FileText className="document-icon" />
-                  <div className="document-info">
-                    <div className="document-name">{doc.name}</div>
-                    <div className="document-deal">{doc.deal}</div>
+        {loading ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading documents...
+          </div>
+        ) : documents.length === 0 ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            No documents in library
+          </div>
+        ) : (
+          <div className="document-list">
+            {documents.map((doc) => {
+              const StatusIcon = getStatusIcon(doc.status)
+              return (
+                <div
+                  key={doc.id}
+                  className={`document-item ${doc.status}`}
+                  onClick={() => handleDocumentClick(doc)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="document-header">
+                    <FileText className="document-icon" />
+                    <div className="document-info">
+                      <div className="document-name">{doc.name}</div>
+                      {doc.deal_id && (
+                        <div className="document-deal">Deal: {doc.deal_id}</div>
+                      )}
+                    </div>
+                    <StatusIcon className="status-icon" />
                   </div>
-                  <StatusIcon className="status-icon" />
-                </div>
-                <div className="document-footer">
-                  <div className="document-meta">
-                    <span className="document-version">{doc.version}</span>
-                    <span className="document-date">
-                      <Calendar className="meta-icon" />
-                      {doc.lastModified}
-                    </span>
-                    <span className="document-author">
-                      <User className="meta-icon" />
-                      {doc.modifiedBy}
-                    </span>
+                  <div className="document-footer">
+                    <div className="document-meta">
+                      <span className="document-version">{doc.version || 'v1.0'}</span>
+                      <span className="document-date">
+                        <Calendar className="meta-icon" />
+                        {new Date(doc.last_modified).toLocaleDateString()}
+                      </span>
+                      {doc.created_by && (
+                        <span className="document-author">
+                          <User className="meta-icon" />
+                          {doc.created_by}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

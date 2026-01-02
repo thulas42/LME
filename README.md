@@ -2,75 +2,194 @@
 
 **Competitive advantage in loan markets**
 
-CreditEdge is a desktop-based platform that reimagines how loan market participants gain competitive advantage through intelligent data aggregation, real-time market insights, and streamlined deal execution.
+A desktop platform for intelligent loan market insights and streamlined deal execution, built for the LMA Edge Hackathon.
 
-## 🚀 Quick Start
+## Overview
 
-### Prerequisites
+CreditEdge is a comprehensive loan market platform that combines AI-powered features, sustainability tracking, and streamlined workflows to revolutionize how loans are originated, documented, traded, and managed.
 
-- Node.js 18+ and npm
-- Git
+## Quick Start
 
 ### Installation
 
 ```bash
-# Install dependencies
+# Install frontend dependencies
 npm install
 
-# Run in development mode
+# Install backend dependencies
+cd server
+npm install
+cd ..
+```
+
+Or use the convenience script:
+```bash
+npm run install:all
+```
+
+### Running the Application
+
+The application consists of three parts:
+1. **Frontend (React + Vite)** - Runs on `http://localhost:5173`
+2. **Backend API (Express)** - Runs on `http://localhost:3001`
+3. **Electron Desktop App** - Desktop wrapper
+
+To run everything together:
+```bash
 npm run dev
 ```
 
 This will start:
-- React development server on `http://localhost:5173`
-- Electron desktop application
+- Backend API server on `http://localhost:3001`
+- Vite dev server on `http://localhost:5173`
+- Electron app window
 
-### Build for Production
+### Running Components Separately
 
+**Backend only:**
 ```bash
-# Build the application
-npm run build
-
-# Package as executable
-npm run package
+cd server
+npm run dev
 ```
 
-## 📁 Project Structure
+**Frontend only:**
+```bash
+npm run dev:react
+```
+
+**Electron only (after frontend is running):**
+```bash
+npm run dev:electron
+```
+
+## Project Structure
 
 ```
 CreditEdge/
-├── electron/          # Electron main process
-│   ├── main.ts       # Main entry point
-│   └── preload.ts    # Preload script
-├── src/              # React application
-│   ├── components/   # React components
-│   ├── pages/        # Page components
-│   ├── styles/       # Global styles
-│   └── App.tsx       # Main app component
-├── assets/           # Static assets
-└── package.json      # Dependencies and scripts
+├── src/                    # Frontend React application
+│   ├── components/         # Reusable UI components
+│   ├── pages/              # Page components
+│   ├── services/            # API service layer
+│   ├── hooks/               # Custom React hooks
+│   └── styles/              # CSS styles
+├── server/                  # Backend API server
+│   ├── src/
+│   │   ├── routes/         # API route handlers
+│   │   ├── db/             # Database setup and migrations
+│   │   └── index.ts         # Server entry point
+│   └── data/               # SQLite database (auto-created)
+├── electron/                # Electron main process
+└── dist/                    # Build output
 ```
 
-## 🎯 Features
+## Features
 
-- **Intelligent Market Intelligence**: Real-time loan market data and analytics
-- **Streamlined Deal Workflow**: Integrated tools for loan origination and management
-- **Competitive Advantage**: Data-driven insights for optimal deal structuring
-- **Modern Desktop Experience**: Built with Electron and React
+### Core Features
+- **Dashboard**: Overview of market activity, deal pipeline, and key metrics
+- **Market Intelligence**: Real-time market data, trends, and analytics
+- **Loan Origination**: Digital workflow for streamlined loan origination and processing
+- **Document Management**: LMA-compliant document templates and management
+- **Loan Trading**: Transparent marketplace for loan trading and secondary market transactions
+- **Deal Workflow**: Manage loan origination, documentation, and execution
+- **Sustainability**: ESG assessment, green finance tracking, and sustainable lending practices
+- **Analytics**: Performance metrics, portfolio analysis, and risk assessment
 
-## 🛠️ Technology Stack
+### Backend API
+- **RESTful API**: Full CRUD operations for all entities
+- **Data Persistence**: SQLite database with automatic schema initialization
+- **Real-time Stats**: Dynamic statistics and metrics
+- **Document Generation**: Template-based document creation
+- **Trading Activity**: Loan listing and trading activity tracking
 
-- **Electron**: Desktop application framework
-- **React**: UI library
-- **TypeScript**: Type safety
-- **Vite**: Build tool and dev server
-- **Recharts**: Data visualization
+## Technology Stack
 
-## 📄 License
+### Frontend
+- **Framework**: React 18, TypeScript
+- **Build Tool**: Vite
+- **UI Components**: Lucide React (icons)
+- **Charts**: Recharts
+- **Routing**: React Router v6
+- **HTTP Client**: Axios
+- **Desktop**: Electron
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: SQLite (better-sqlite3)
+- **Language**: TypeScript
+- **API**: RESTful API
+
+## API Endpoints
+
+### Applications
+- `GET /api/applications` - Get all applications
+- `POST /api/applications` - Create new application
+- `PUT /api/applications/:id` - Update application
+- `GET /api/applications/stats/summary` - Get statistics
+
+### Deals
+- `GET /api/deals` - Get all deals
+- `POST /api/deals` - Create new deal
+- `PUT /api/deals/:id` - Update deal
+- `GET /api/deals/stats/summary` - Get statistics
+
+### Documents
+- `GET /api/documents` - Get all documents
+- `GET /api/documents/templates/all` - Get all templates
+- `POST /api/documents/generate` - Generate document from template
+- `POST /api/documents/upload` - Upload document
+
+### Trading
+- `GET /api/trading/listings` - Get loan listings
+- `GET /api/trading/activity` - Get trading activity
+- `GET /api/trading/stats/summary` - Get statistics
+
+### Sustainability
+- `GET /api/sustainability/green-loans` - Get green loans
+- `GET /api/sustainability/targets` - Get ESG targets
+- `PUT /api/sustainability/targets` - Update ESG targets
+
+See `server/README.md` for complete API documentation.
+
+## Building for Production
+
+```bash
+# Build frontend
+npm run build:react
+
+# Build backend
+npm run build:server
+
+# Build Electron
+npm run build:electron
+
+# Package application
+npm run package
+```
+
+## Development
+
+The application uses:
+- **Hot Module Replacement (HMR)** for fast development
+- **TypeScript** for type safety
+- **SQLite** for local data persistence
+- **RESTful API** for backend communication
+
+## Database
+
+The SQLite database is automatically created in `server/data/creditedge.db` on first run. The schema includes:
+- Applications
+- Deals
+- Documents & Templates
+- Loan Listings
+- Trading Activity
+- Green Loans
+- ESG Targets
+
+## License
 
 MIT
 
----
+## Credits
 
-*Built for the LMA Edge Hackathon - Reimagining the Future of Loan Markets*
-
+Built for the LMA Edge Hackathon 2024
