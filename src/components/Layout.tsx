@@ -5,7 +5,11 @@ import {
   TrendingUp, 
   FileText, 
   BarChart3,
-  Zap
+  Zap,
+  Rocket,
+  FileCheck,
+  ArrowLeftRight,
+  Leaf
 } from 'lucide-react'
 
 interface LayoutProps {
@@ -17,8 +21,12 @@ export default function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/origination', icon: Rocket, label: 'Loan Origination' },
+    { path: '/documents', icon: FileCheck, label: 'Document Management' },
+    { path: '/trading', icon: ArrowLeftRight, label: 'Loan Trading' },
     { path: '/market-intelligence', icon: TrendingUp, label: 'Market Intelligence' },
     { path: '/deal-workflow', icon: FileText, label: 'Deal Workflow' },
+    { path: '/sustainability', icon: Leaf, label: 'Sustainability' },
     { path: '/analytics', icon: BarChart3, label: 'Analytics' },
   ]
 

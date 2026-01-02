@@ -1,8 +1,17 @@
+import { useState } from 'react'
 import { Plus, FileText, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import DealPipeline from '../components/DealPipeline'
 import DealDetails from '../components/DealDetails'
+import NewDealModal from '../components/NewDealModal'
 
 export default function DealWorkflow() {
+  const [showNewDeal, setShowNewDeal] = useState(false)
+
+  const handleCreateDeal = (deal: any) => {
+    console.log('Creating new deal:', deal)
+    // In a real app, this would create the deal
+  }
+
   return (
     <div className="deal-workflow">
       <div className="page-header">
@@ -10,11 +19,18 @@ export default function DealWorkflow() {
           <h1>Deal Workflow</h1>
           <p className="subtitle">Manage loan origination, documentation, and execution</p>
         </div>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => setShowNewDeal(true)}>
           <Plus className="btn-icon" />
           New Deal
         </button>
       </div>
+
+      {showNewDeal && (
+        <NewDealModal
+          onClose={() => setShowNewDeal(false)}
+          onCreate={handleCreateDeal}
+        />
+      )}
 
       <div className="workflow-stats">
         <div className="workflow-stat">
