@@ -8,7 +8,47 @@ import AIAssistantModal from '../components/AIAssistantModal'
 export default function LoanOrigination() {
   const [showNewApplication, setShowNewApplication] = useState(false)
   const [showAIAssistant, setShowAIAssistant] = useState(false)
-  const [hasActiveApplication, setHasActiveApplication] = useState(true)
+  const [hasActiveApplication, setHasActiveApplication] = useState(false)
+  const [stats, setStats] = useState({
+    applications: 0,
+    avgProcessing: '3.2 days',
+    approvalRate: 68,
+    pipelineValue: 0,
+  })
+
+  useEffect(() => {
+    fetchStats()
+    checkActiveApplication()
+  }, [])
+
+  const fetchStats = async () => {
+    try {
+      const { applicationsAPI } = await import('../services/api')
+      const response = await applicationsAPI.getStats()
+      const data = response.data
+      setStats({
+        applications: data.total || 0,
+        avgProcessing: '3.2 days',
+        approvalRate: data.total > 0 ? Math.round((data.approved / data.total) * 100) : 0,
+        pipelineValue: 0,
+      })
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
+
+  const checkActiveApplication = async () => {
+    try {
+      const { applicationsAPI } = await import('../services/api')
+      const response = await applicationsAPI.getAll()
+      const pending = response.data.filter((app: any) => 
+        app.status === 'pending' || app.status === 'under-review'
+      )
+      setHasActiveApplication(pending.length > 0)
+    } catch (error) {
+      console.error('Error checking applications:', error)
+    }
+  }
 
   const handleNewApplication = () => {
     setShowNewApplication(true)
@@ -29,6 +69,8 @@ export default function LoanOrigination() {
       console.log('Application created:', response.data)
       setShowNewApplication(false)
       setHasActiveApplication(true)
+      await fetchStats()
+      await checkActiveApplication()
     } catch (error: any) {
       console.error('Error creating application:', error)
       alert(error.message || 'Failed to create application')

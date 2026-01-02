@@ -1,8 +1,8 @@
-import Database from 'better-sqlite3'
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
+import { v4 as uuidv4 } from 'uuid'
 
-const dbPath = path.join(__dirname, '../../data/creditedge.db')
+const dbPath = path.join(__dirname, '../../data/database.json')
 const dbDir = path.dirname(dbPath)
 
 // Ensure data directory exists
@@ -10,230 +10,233 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true })
 }
 
-export const db = new Database(dbPath)
+interface Database {
+  applications: any[]
+  deals: any[]
+  documents: any[]
+  templates: any[]
+  loan_listings: any[]
+  trading_activity: any[]
+  green_loans: any[]
+  esg_targets: any[]
+}
+
+let db: Database = {
+  applications: [],
+  deals: [],
+  documents: [],
+  templates: [],
+  loan_listings: [],
+  trading_activity: [],
+  green_loans: [],
+  esg_targets: [],
+}
+
+// Load database from file
+function loadDatabase(): Database {
+  if (fs.existsSync(dbPath)) {
+    try {
+      const data = fs.readFileSync(dbPath, 'utf-8')
+      return JSON.parse(data)
+    } catch (error) {
+      console.error('Error loading database:', error)
+      return db
+    }
+  }
+  return db
+}
+
+// Save database to file
+function saveDatabase() {
+  try {
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2))
+  } catch (error) {
+    console.error('Error saving database:', error)
+  }
+}
+
+// Database operations
+export const database = {
+  // Applications
+  getApplications: () => db.applications,
+  getApplication: (id: string) => db.applications.find(app => app.id === id),
+  createApplication: (data: any) => {
+    const application = { id: uuidv4(), ...data, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+    db.applications.push(application)
+    saveDatabase()
+    return application
+  },
+  updateApplication: (id: string, data: any) => {
+    const index = db.applications.findIndex(app => app.id === id)
+    if (index === -1) return null
+    db.applications[index] = { ...db.applications[index], ...data, updated_at: new Date().toISOString() }
+    saveDatabase()
+    return db.applications[index]
+  },
+  deleteApplication: (id: string) => {
+    const index = db.applications.findIndex(app => app.id === id)
+    if (index === -1) return false
+    db.applications.splice(index, 1)
+    saveDatabase()
+    return true
+  },
+
+  // Deals
+  getDeals: () => db.deals,
+  getDeal: (id: string) => db.deals.find(deal => deal.id === id),
+  createDeal: (data: any) => {
+    const deal = { id: uuidv4(), ...data, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+    db.deals.push(deal)
+    saveDatabase()
+    return deal
+  },
+  updateDeal: (id: string, data: any) => {
+    const index = db.deals.findIndex(deal => deal.id === id)
+    if (index === -1) return null
+    db.deals[index] = { ...db.deals[index], ...data, updated_at: new Date().toISOString() }
+    saveDatabase()
+    return db.deals[index]
+  },
+  deleteDeal: (id: string) => {
+    const index = db.deals.findIndex(deal => deal.id === id)
+    if (index === -1) return false
+    db.deals.splice(index, 1)
+    saveDatabase()
+    return true
+  },
+
+  // Documents
+  getDocuments: () => db.documents,
+  getDocument: (id: string) => db.documents.find(doc => doc.id === id),
+  createDocument: (data: any) => {
+    const document = { id: uuidv4(), ...data, created_at: new Date().toISOString(), last_modified: new Date().toISOString() }
+    db.documents.push(document)
+    saveDatabase()
+    return document
+  },
+  updateDocument: (id: string, data: any) => {
+    const index = db.documents.findIndex(doc => doc.id === id)
+    if (index === -1) return null
+    db.documents[index] = { ...db.documents[index], ...data, last_modified: new Date().toISOString() }
+    saveDatabase()
+    return db.documents[index]
+  },
+  deleteDocument: (id: string) => {
+    const index = db.documents.findIndex(doc => doc.id === id)
+    if (index === -1) return false
+    db.documents.splice(index, 1)
+    saveDatabase()
+    return true
+  },
+
+  // Templates
+  getTemplates: () => db.templates,
+  getTemplate: (id: string) => db.templates.find(tpl => tpl.id === id),
+  updateTemplate: (id: string, data: any) => {
+    const index = db.templates.findIndex(tpl => tpl.id === id)
+    if (index === -1) return null
+    db.templates[index] = { ...db.templates[index], ...data }
+    saveDatabase()
+    return db.templates[index]
+  },
+
+  // Loan Listings
+  getListings: (filters?: any) => {
+    let listings = db.loan_listings
+    if (filters?.sector) listings = listings.filter(l => l.sector === filters.sector)
+    if (filters?.status) listings = listings.filter(l => l.status === filters.status)
+    if (filters?.minAmount) listings = listings.filter(l => l.amount >= filters.minAmount)
+    if (filters?.maxAmount) listings = listings.filter(l => l.amount <= filters.maxAmount)
+    return listings
+  },
+  getListing: (id: string) => db.loan_listings.find(listing => listing.id === id),
+  createListing: (data: any) => {
+    const listing = { id: uuidv4(), ...data, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+    db.loan_listings.push(listing)
+    saveDatabase()
+    return listing
+  },
+  updateListing: (id: string, data: any) => {
+    const index = db.loan_listings.findIndex(listing => listing.id === id)
+    if (index === -1) return null
+    db.loan_listings[index] = { ...db.loan_listings[index], ...data, updated_at: new Date().toISOString() }
+    saveDatabase()
+    return db.loan_listings[index]
+  },
+
+  // Trading Activity
+  getActivity: (limit?: number) => {
+    const activity = db.trading_activity.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    return limit ? activity.slice(0, limit) : activity
+  },
+  createActivity: (data: any) => {
+    const activity = { id: uuidv4(), ...data, created_at: new Date().toISOString() }
+    db.trading_activity.push(activity)
+    saveDatabase()
+    return activity
+  },
+
+  // Green Loans
+  getGreenLoans: () => db.green_loans,
+  getGreenLoan: (id: string) => db.green_loans.find(loan => loan.id === id),
+
+  // ESG Targets
+  getESGTargets: () => db.esg_targets[0] || null,
+  updateESGTargets: (data: any) => {
+    if (db.esg_targets.length === 0) {
+      db.esg_targets.push({ id: 'targets-1', ...data, updated_at: new Date().toISOString() })
+    } else {
+      db.esg_targets[0] = { ...db.esg_targets[0], ...data, updated_at: new Date().toISOString() }
+    }
+    saveDatabase()
+    return db.esg_targets[0]
+  },
+}
 
 export function initDatabase() {
-  // Enable foreign keys
-  db.pragma('foreign_keys = ON')
+  // Load existing database
+  db = loadDatabase()
 
-  // Create tables
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS applications (
-      id TEXT PRIMARY KEY,
-      borrower_name TEXT NOT NULL,
-      borrower_type TEXT NOT NULL,
-      loan_amount REAL NOT NULL,
-      currency TEXT NOT NULL,
-      loan_type TEXT NOT NULL,
-      sector TEXT NOT NULL,
-      loan_purpose TEXT,
-      status TEXT NOT NULL DEFAULT 'pending',
-      current_step INTEGER DEFAULT 1,
-      credit_score INTEGER,
-      debt_to_income REAL,
-      risk_level TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+  // Initialize with sample data if empty
+  if (db.templates.length === 0) {
+    db.templates = [
+      { id: 'tpl-1', name: 'LMA Term Loan Agreement', category: 'Standard', version: '2024.1', compliant: 1, usage_count: 156 },
+      { id: 'tpl-2', name: 'Revolving Credit Facility', category: 'Standard', version: '2024.1', compliant: 1, usage_count: 89 },
+      { id: 'tpl-3', name: 'Syndicated Loan Agreement', category: 'Standard', version: '2024.1', compliant: 1, usage_count: 124 },
+      { id: 'tpl-4', name: 'Green Loan Agreement', category: 'Specialized', version: '2024.2', compliant: 1, usage_count: 45 },
+    ]
+  }
 
-    CREATE TABLE IF NOT EXISTS deals (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      borrower TEXT NOT NULL,
-      amount REAL NOT NULL,
-      currency TEXT NOT NULL,
-      type TEXT NOT NULL,
-      sector TEXT,
-      purpose TEXT,
-      status TEXT NOT NULL DEFAULT 'in-progress',
-      stage TEXT,
-      progress INTEGER DEFAULT 0,
-      spread INTEGER,
-      term TEXT,
-      start_date TEXT,
-      expected_close TEXT,
-      participants INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+  if (db.deals.length === 0) {
+    db.deals = [
+      { id: 'deal-1', name: 'Renewable Energy Facility', borrower: 'GreenPower Corp', amount: 500, currency: 'EUR', type: 'Term Loan', sector: 'Energy', status: 'in-progress', stage: 'Documentation', progress: 65, spread: 175, term: '5 years', start_date: '2024-01-15', expected_close: '2024-03-15', participants: 8, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: 'deal-2', name: 'Infrastructure Loan', borrower: 'InfraBuild Ltd', amount: 250, currency: 'GBP', type: 'Term Loan', sector: 'Infrastructure', status: 'pending', stage: 'Due Diligence', progress: 40, spread: 185, term: '7 years', start_date: '2024-01-10', expected_close: '2024-04-10', participants: 5, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: 'deal-3', name: 'Corporate Refinancing', borrower: 'TechGlobal Inc', amount: 300, currency: 'USD', type: 'Revolving Credit', sector: 'Technology', status: 'attention', stage: 'Pricing Review', progress: 80, spread: 165, term: '3 years', start_date: '2024-01-05', expected_close: '2024-02-20', participants: 12, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    ]
+  }
 
-    CREATE TABLE IF NOT EXISTS documents (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      deal_id TEXT,
-      category TEXT NOT NULL,
-      template_id TEXT,
-      status TEXT NOT NULL DEFAULT 'pending',
-      version TEXT,
-      file_path TEXT,
-      created_by TEXT,
-      last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (deal_id) REFERENCES deals(id)
-    );
+  if (db.loan_listings.length === 0) {
+    db.loan_listings = [
+      { id: 'listing-1', borrower: 'TechCorp Industries', loan_id: 'LN-2024-001', amount: 50, remaining: 42, price: 98.5, spread: 175, sector: 'Technology', status: 'active', views: 24, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: 'listing-2', borrower: 'GreenEnergy Solutions', loan_id: 'LN-2024-015', amount: 75, remaining: 68, price: 99.2, spread: 165, sector: 'Energy', status: 'active', views: 18, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { id: 'listing-3', borrower: 'InfraBuild Ltd', loan_id: 'LN-2024-028', amount: 120, remaining: 95, price: 97.8, spread: 185, sector: 'Infrastructure', status: 'active', views: 31, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    ]
+  }
 
-    CREATE TABLE IF NOT EXISTS templates (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      version TEXT NOT NULL,
-      compliant INTEGER DEFAULT 1,
-      usage_count INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+  if (db.green_loans.length === 0) {
+    db.green_loans = [
+      { id: 'green-1', name: 'Solar Farm Development', borrower: 'SunPower Energy', amount: 150, category: 'Renewable Energy', esg_score: 92, carbon_reduction: '25kt CO₂/year', status: 'active', created_at: new Date().toISOString() },
+      { id: 'green-2', name: 'Green Building Retrofit', borrower: 'EcoBuild Corp', amount: 85, category: 'Green Buildings', esg_score: 88, carbon_reduction: '12kt CO₂/year', status: 'active', created_at: new Date().toISOString() },
+      { id: 'green-3', name: 'Electric Vehicle Fleet', borrower: 'CleanTransport Ltd', amount: 45, category: 'Clean Transport', esg_score: 85, carbon_reduction: '8kt CO₂/year', status: 'pending', created_at: new Date().toISOString() },
+    ]
+  }
 
-    CREATE TABLE IF NOT EXISTS loan_listings (
-      id TEXT PRIMARY KEY,
-      borrower TEXT NOT NULL,
-      loan_id TEXT NOT NULL UNIQUE,
-      amount REAL NOT NULL,
-      remaining REAL NOT NULL,
-      price REAL NOT NULL,
-      spread INTEGER NOT NULL,
-      sector TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'active',
-      views INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+  if (db.esg_targets.length === 0) {
+    db.esg_targets = [
+      { id: 'targets-1', green_loans_target: 1500, esg_compliance_target: 95, carbon_reduction_target: 50, sdg_goals_target: 15, updated_at: new Date().toISOString() },
+    ]
+  }
 
-    CREATE TABLE IF NOT EXISTS trading_activity (
-      id TEXT PRIMARY KEY,
-      loan_id TEXT NOT NULL,
-      borrower TEXT NOT NULL,
-      amount REAL NOT NULL,
-      price REAL NOT NULL,
-      buyer TEXT NOT NULL,
-      seller TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (loan_id) REFERENCES loan_listings(loan_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS green_loans (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      borrower TEXT NOT NULL,
-      amount REAL NOT NULL,
-      category TEXT NOT NULL,
-      esg_score INTEGER NOT NULL,
-      carbon_reduction TEXT,
-      status TEXT NOT NULL DEFAULT 'active',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS esg_targets (
-      id TEXT PRIMARY KEY,
-      green_loans_target REAL,
-      esg_compliance_target REAL,
-      carbon_reduction_target REAL,
-      sdg_goals_target INTEGER,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
-    CREATE INDEX IF NOT EXISTS idx_deals_status ON deals(status);
-    CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
-    CREATE INDEX IF NOT EXISTS idx_loan_listings_status ON loan_listings(status);
-  `)
-
-  // Insert initial data
-  insertInitialData()
-  
+  saveDatabase()
   console.log('✅ Database initialized successfully')
 }
-
-function insertInitialData() {
-  // Check if data already exists
-  const existingTemplates = db.prepare('SELECT COUNT(*) as count FROM templates').get() as { count: number }
-  if (existingTemplates.count > 0) return
-
-  // Insert templates
-  const insertTemplate = db.prepare(`
-    INSERT INTO templates (id, name, category, version, compliant, usage_count)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `)
-
-  const templates = [
-    ['tpl-1', 'LMA Term Loan Agreement', 'Standard', '2024.1', 1, 156],
-    ['tpl-2', 'Revolving Credit Facility', 'Standard', '2024.1', 1, 89],
-    ['tpl-3', 'Syndicated Loan Agreement', 'Standard', '2024.1', 1, 124],
-    ['tpl-4', 'Green Loan Agreement', 'Specialized', '2024.2', 1, 45],
-  ]
-
-  const insertMany = db.transaction((templates) => {
-    for (const template of templates) {
-      insertTemplate.run(...template)
-    }
-  })
-
-  insertMany(templates)
-
-  // Insert sample deals
-  const insertDeal = db.prepare(`
-    INSERT INTO deals (id, name, borrower, amount, currency, type, sector, status, stage, progress, spread, term, start_date, expected_close, participants)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-
-  const deals = [
-    ['deal-1', 'Renewable Energy Facility', 'GreenPower Corp', 500, 'EUR', 'Term Loan', 'Energy', 'in-progress', 'Documentation', 65, 175, '5 years', '2024-01-15', '2024-03-15', 8],
-    ['deal-2', 'Infrastructure Loan', 'InfraBuild Ltd', 250, 'GBP', 'Term Loan', 'Infrastructure', 'pending', 'Due Diligence', 40, 185, '7 years', '2024-01-10', '2024-04-10', 5],
-    ['deal-3', 'Corporate Refinancing', 'TechGlobal Inc', 300, 'USD', 'Revolving Credit', 'Technology', 'attention', 'Pricing Review', 80, 165, '3 years', '2024-01-05', '2024-02-20', 12],
-  ]
-
-  const insertDeals = db.transaction((deals) => {
-    for (const deal of deals) {
-      insertDeal.run(...deal)
-    }
-  })
-
-  insertDeals(deals)
-
-  // Insert sample loan listings
-  const insertListing = db.prepare(`
-    INSERT INTO loan_listings (id, borrower, loan_id, amount, remaining, price, spread, sector, status, views)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-
-  const listings = [
-    ['listing-1', 'TechCorp Industries', 'LN-2024-001', 50, 42, 98.5, 175, 'Technology', 'active', 24],
-    ['listing-2', 'GreenEnergy Solutions', 'LN-2024-015', 75, 68, 99.2, 165, 'Energy', 'active', 18],
-    ['listing-3', 'InfraBuild Ltd', 'LN-2024-028', 120, 95, 97.8, 185, 'Infrastructure', 'active', 31],
-  ]
-
-  const insertListings = db.transaction((listings) => {
-    for (const listing of listings) {
-      insertListing.run(...listing)
-    }
-  })
-
-  insertListings(listings)
-
-  // Insert sample green loans
-  const insertGreenLoan = db.prepare(`
-    INSERT INTO green_loans (id, name, borrower, amount, category, esg_score, carbon_reduction, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-
-  const greenLoans = [
-    ['green-1', 'Solar Farm Development', 'SunPower Energy', 150, 'Renewable Energy', 92, '25kt CO₂/year', 'active'],
-    ['green-2', 'Green Building Retrofit', 'EcoBuild Corp', 85, 'Green Buildings', 88, '12kt CO₂/year', 'active'],
-    ['green-3', 'Electric Vehicle Fleet', 'CleanTransport Ltd', 45, 'Clean Transport', 85, '8kt CO₂/year', 'pending'],
-  ]
-
-  const insertGreenLoans = db.transaction((loans) => {
-    for (const loan of loans) {
-      insertGreenLoan.run(...loan)
-    }
-  })
-
-  insertGreenLoans(greenLoans)
-
-  // Insert default ESG targets
-  db.prepare(`
-    INSERT INTO esg_targets (id, green_loans_target, esg_compliance_target, carbon_reduction_target, sdg_goals_target)
-    VALUES ('targets-1', 1500, 95, 50, 15)
-  `).run()
-
-  console.log('✅ Initial data inserted')
-}
-

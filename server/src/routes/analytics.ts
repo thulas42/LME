@@ -1,65 +1,84 @@
 import express from 'express'
-import { db } from '../db/database'
+import { database } from '../db/database'
 
 const router = express.Router()
 
-// Get performance metrics
 router.get('/performance', (req, res) => {
   try {
-    const metrics = db.prepare(`
-      SELECT 
-        strftime('%Y-%m', created_at) as month,
-        AVG(progress) as avg_progress,
-        COUNT(*) as deals_completed
-      FROM deals
-      WHERE created_at >= datetime('now', '-6 months')
-      GROUP BY strftime('%Y-%m', created_at)
-      ORDER BY month
-    `).all()
+    const deals = database.getDeals()
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-    res.json(metrics)
+    const recentDeals = deals.filter(d => new Date(d.created_at) >= sixMonthsAgo)
+    const metrics = recentDeals.reduce((acc: any, deal) => {
+      const month = new Date(deal.created_at).toISOString().slice(0, 7)
+      if (!acc[month]) {
+        acc[month] = { month, progresses: [], deals_completed: 0 }
+      }
+      if (deal.progress) acc[month].progresses.push(deal.progress)
+      if (deal.status === 'completed') acc[month].deals_completed++
+      return acc
+    }, {})
+
+    const result = Object.values(metrics).map((m: any) => ({
+      month: m.month,
+      avg_progress: m.progresses.length > 0
+        ? m.progresses.reduce((sum: number, p: number) => sum + p, 0) / m.progresses.length
+        : 0,
+      deals_completed: m.deals_completed,
+    }))
+
+    res.json(result)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Get portfolio analysis
 router.get('/portfolio', (req, res) => {
   try {
-    const portfolio = db.prepare(`
-      SELECT 
-        sector,
-        COUNT(*) as count,
-        SUM(amount) as total_amount
-      FROM deals
-      WHERE sector IS NOT NULL AND sector != ''
-      GROUP BY sector
-    `).all()
+    const deals = database.getDeals()
+    const portfolio = deals.reduce((acc: any, deal) => {
+      if (!deal.sector) return acc
+      if (!acc[deal.sector]) {
+        acc[deal.sector] = { sector: deal.sector, count: 0, total_amount: 0 }
+      }
+      acc[deal.sector].count++
+      acc[deal.sector].total_amount += deal.amount || 0
+      return acc
+    }, {})
 
-    res.json(portfolio)
+    res.json(Object.values(portfolio))
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Get risk metrics
 router.get('/risk', (req, res) => {
   try {
-    const riskMetrics = db.prepare(`
-      SELECT 
-        risk_level,
-        COUNT(*) as count,
-        AVG(credit_score) as avg_credit_score
-      FROM applications
-      WHERE risk_level IS NOT NULL
-      GROUP BY risk_level
-    `).all()
+    const applications = database.getApplications()
+    const riskMetrics = applications
+      .filter(app => app.risk_level)
+      .reduce((acc: any, app) => {
+        if (!acc[app.risk_level]) {
+          acc[app.risk_level] = { risk_level: app.risk_level, count: 0, scores: [] }
+        }
+        acc[app.risk_level].count++
+        if (app.credit_score) acc[app.risk_level].scores.push(app.credit_score)
+        return acc
+      }, {})
 
-    res.json(riskMetrics)
+    const result = Object.values(riskMetrics).map((m: any) => ({
+      risk_level: m.risk_level,
+      count: m.count,
+      avg_credit_score: m.scores.length > 0
+        ? m.scores.reduce((sum: number, s: number) => sum + s, 0) / m.scores.length
+        : 0,
+    }))
+
+    res.json(result)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
 export default router
-

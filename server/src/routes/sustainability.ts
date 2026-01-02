@@ -1,22 +1,29 @@
 import express from 'express'
-import { db } from '../db/database'
+import { database } from '../db/database'
 
 const router = express.Router()
 
-// Get all green loans
+/**
+ * @swagger
+ * /api/sustainability/green-loans:
+ *   get:
+ *     summary: Get all green loans
+ *     tags: [Sustainability]
+ */
 router.get('/green-loans', (req, res) => {
   try {
-    const loans = db.prepare('SELECT * FROM green_loans ORDER BY created_at DESC').all()
+    const loans = database.getGreenLoans().sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
     res.json(loans)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Get green loan by ID
 router.get('/green-loans/:id', (req, res) => {
   try {
-    const loan = db.prepare('SELECT * FROM green_loans WHERE id = ?').get(req.params.id)
+    const loan = database.getGreenLoan(req.params.id)
     if (!loan) {
       return res.status(404).json({ error: 'Green loan not found' })
     }
@@ -26,12 +33,17 @@ router.get('/green-loans/:id', (req, res) => {
   }
 })
 
-// Get ESG targets
+/**
+ * @swagger
+ * /api/sustainability/targets:
+ *   get:
+ *     summary: Get ESG targets
+ *     tags: [Sustainability]
+ */
 router.get('/targets', (req, res) => {
   try {
-    const targets = db.prepare('SELECT * FROM esg_targets ORDER BY updated_at DESC LIMIT 1').get()
+    const targets = database.getESGTargets()
     if (!targets) {
-      // Return default targets if none exist
       return res.json({
         id: 'default',
         green_loans_target: 1500,
@@ -46,7 +58,13 @@ router.get('/targets', (req, res) => {
   }
 })
 
-// Update ESG targets
+/**
+ * @swagger
+ * /api/sustainability/targets:
+ *   put:
+ *     summary: Update ESG targets
+ *     tags: [Sustainability]
+ */
 router.put('/targets', (req, res) => {
   try {
     const {
@@ -56,62 +74,43 @@ router.put('/targets', (req, res) => {
       sdgGoals,
     } = req.body
 
-    // Check if targets exist
-    const existing = db.prepare('SELECT * FROM esg_targets ORDER BY updated_at DESC LIMIT 1').get()
-
-    if (existing) {
-      const update = db.prepare(`
-        UPDATE esg_targets
-        SET green_loans_target = COALESCE(?, green_loans_target),
-            esg_compliance_target = COALESCE(?, esg_compliance_target),
-            carbon_reduction_target = COALESCE(?, carbon_reduction_target),
-            sdg_goals_target = COALESCE(?, sdg_goals_target),
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `)
-      update.run(greenLoans, esgCompliance, carbonReduction, sdgGoals, existing.id)
-    } else {
-      const insert = db.prepare(`
-        INSERT INTO esg_targets (id, green_loans_target, esg_compliance_target, carbon_reduction_target, sdg_goals_target)
-        VALUES (?, ?, ?, ?, ?)
-      `)
-      insert.run('targets-1', greenLoans, esgCompliance, carbonReduction, sdgGoals)
-    }
-
-    const targets = db.prepare('SELECT * FROM esg_targets ORDER BY updated_at DESC LIMIT 1').get()
+    const targets = database.updateESGTargets({
+      green_loans_target: greenLoans,
+      esg_compliance_target: esgCompliance,
+      carbon_reduction_target: carbonReduction,
+      sdg_goals_target: sdgGoals,
+    })
     res.json(targets)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Get sustainability statistics
 router.get('/stats', (req, res) => {
   try {
-    const stats = db.prepare(`
-      SELECT
-        COUNT(*) as total_green_loans,
-        SUM(amount) as total_green_volume,
-        AVG(esg_score) as avg_esg_score
-      FROM green_loans
-      WHERE status = 'active'
-    `).get()
+    const loans = database.getGreenLoans().filter(l => l.status === 'active')
+    const targets = database.getESGTargets()
 
-    const targets = db.prepare('SELECT * FROM esg_targets ORDER BY updated_at DESC LIMIT 1').get()
-
-    res.json({
-      current: stats,
+    const stats = {
+      current: {
+        total_green_loans: loans.length,
+        total_green_volume: loans.reduce((sum, l) => sum + (l.amount || 0), 0),
+        avg_esg_score: loans.length > 0
+          ? loans.reduce((sum, l) => sum + (l.esg_score || 0), 0) / loans.length
+          : 0,
+      },
       targets: targets || {
         green_loans_target: 1500,
         esg_compliance_target: 95,
         carbon_reduction_target: 50,
         sdg_goals_target: 15,
       },
-    })
+    }
+
+    res.json(stats)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
 export default router
-

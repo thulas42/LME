@@ -1,23 +1,39 @@
 import express from 'express'
 import { v4 as uuidv4 } from 'uuid'
-import { db } from '../db/database'
+import { database } from '../db/database'
 
 const router = express.Router()
 
-// Get all documents
+/**
+ * @swagger
+ * /api/documents:
+ *   get:
+ *     summary: Get all documents
+ *     tags: [Documents]
+ *     responses:
+ *       200:
+ *         description: List of all documents
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Document'
+ */
 router.get('/', (req, res) => {
   try {
-    const documents = db.prepare('SELECT * FROM documents ORDER BY last_modified DESC').all()
+    const documents = database.getDocuments().sort((a, b) => 
+      new Date(b.last_modified).getTime() - new Date(a.last_modified).getTime()
+    )
     res.json(documents)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Get document by ID
 router.get('/:id', (req, res) => {
   try {
-    const document = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id)
+    const document = database.getDocument(req.params.id)
     if (!document) {
       return res.status(404).json({ error: 'Document not found' })
     }
@@ -27,20 +43,28 @@ router.get('/:id', (req, res) => {
   }
 })
 
-// Get all templates
+/**
+ * @swagger
+ * /api/documents/templates/all:
+ *   get:
+ *     summary: Get all document templates
+ *     tags: [Documents]
+ *     responses:
+ *       200:
+ *         description: List of all templates
+ */
 router.get('/templates/all', (req, res) => {
   try {
-    const templates = db.prepare('SELECT * FROM templates ORDER BY usage_count DESC').all()
+    const templates = database.getTemplates().sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0))
     res.json(templates)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Get template by ID
 router.get('/templates/:id', (req, res) => {
   try {
-    const template = db.prepare('SELECT * FROM templates WHERE id = ?').get(req.params.id)
+    const template = database.getTemplate(req.params.id)
     if (!template) {
       return res.status(404).json({ error: 'Template not found' })
     }
@@ -50,7 +74,13 @@ router.get('/templates/:id', (req, res) => {
   }
 })
 
-// Create document from template
+/**
+ * @swagger
+ * /api/documents/generate:
+ *   post:
+ *     summary: Generate document from template
+ *     tags: [Documents]
+ */
 router.post('/generate', (req, res) => {
   try {
     const {
@@ -66,42 +96,30 @@ router.post('/generate', (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    const template = db.prepare('SELECT * FROM templates WHERE id = ?').get(templateId)
+    const template = database.getTemplate(templateId)
     if (!template) {
       return res.status(404).json({ error: 'Template not found' })
     }
 
-    const id = uuidv4()
-    const version = 'v1.0'
     const documentName = `${template.name} - ${borrowerName}`
+    const document = database.createDocument({
+      name: documentName,
+      deal_id: dealId,
+      category: template.category,
+      template_id: templateId,
+      status: 'pending',
+      version: 'v1.0',
+      created_by: 'System',
+    })
 
-    // Create document
-    const insert = db.prepare(`
-      INSERT INTO documents (
-        id, name, deal_id, category, template_id, status, version, created_by
-      ) VALUES (?, ?, ?, ?, ?, 'pending', ?, 'System')
-    `)
+    database.updateTemplate(templateId, { usage_count: (template.usage_count || 0) + 1 })
 
-    insert.run(
-      id,
-      documentName,
-      dealId,
-      template.category,
-      templateId,
-      version
-    )
-
-    // Update template usage count
-    db.prepare('UPDATE templates SET usage_count = usage_count + 1 WHERE id = ?').run(templateId)
-
-    const document = db.prepare('SELECT * FROM documents WHERE id = ?').get(id)
     res.status(201).json(document)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Upload document
 router.post('/upload', (req, res) => {
   try {
     const {
@@ -114,38 +132,28 @@ router.post('/upload', (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    const id = uuidv4()
-    const insert = db.prepare(`
-      INSERT INTO documents (
-        id, name, deal_id, category, status, version, created_by
-      ) VALUES (?, ?, ?, ?, 'pending', 'v1.0', 'User')
-    `)
-
-    insert.run(id, name, dealId || null, category)
-
-    const document = db.prepare('SELECT * FROM documents WHERE id = ?').get(id)
+    const document = database.createDocument({
+      name,
+      deal_id: dealId || null,
+      category,
+      status: 'pending',
+      version: 'v1.0',
+      created_by: 'User',
+    })
     res.status(201).json(document)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Update document
 router.put('/:id', (req, res) => {
   try {
     const { status, version } = req.body
+    const updateData: any = {}
+    if (status !== undefined) updateData.status = status
+    if (version !== undefined) updateData.version = version
 
-    const update = db.prepare(`
-      UPDATE documents
-      SET status = COALESCE(?, status),
-          version = COALESCE(?, version),
-          last_modified = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `)
-
-    update.run(status, version, req.params.id)
-
-    const document = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id)
+    const document = database.updateDocument(req.params.id, updateData)
     if (!document) {
       return res.status(404).json({ error: 'Document not found' })
     }
@@ -156,11 +164,10 @@ router.put('/:id', (req, res) => {
   }
 })
 
-// Delete document
 router.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM documents WHERE id = ?').run(req.params.id)
-    if (result.changes === 0) {
+    const deleted = database.deleteDocument(req.params.id)
+    if (!deleted) {
       return res.status(404).json({ error: 'Document not found' })
     }
     res.json({ message: 'Document deleted successfully' })
@@ -169,17 +176,15 @@ router.delete('/:id', (req, res) => {
   }
 })
 
-// Get document statistics
 router.get('/stats/summary', (req, res) => {
   try {
-    const stats = db.prepare(`
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'review' THEN 1 ELSE 0 END) as review
-      FROM documents
-    `).get()
+    const documents = database.getDocuments()
+    const stats = {
+      total: documents.length,
+      approved: documents.filter(d => d.status === 'approved').length,
+      pending: documents.filter(d => d.status === 'pending').length,
+      review: documents.filter(d => d.status === 'review').length,
+    }
 
     res.json(stats)
   } catch (error: any) {
@@ -188,4 +193,3 @@ router.get('/stats/summary', (req, res) => {
 })
 
 export default router
-
