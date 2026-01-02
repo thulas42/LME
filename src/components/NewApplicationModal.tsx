@@ -3,7 +3,7 @@ import { X, Building2, DollarSign, Calendar, FileText, User } from 'lucide-react
 
 interface NewApplicationModalProps {
   onClose: () => void
-  onStart: (data: any) => void
+  onStart: (data: any) => Promise<void>
 }
 
 export default function NewApplicationModal({ onClose, onStart }: NewApplicationModalProps) {
@@ -53,7 +53,7 @@ export default function NewApplicationModal({ onClose, onStart }: NewApplication
     e.preventDefault()
     if (validateForm()) {
       try {
-        onStart(formData)
+        await onStart(formData)
       } catch (error: any) {
         console.error('Error creating application:', error)
         alert(error.message || 'Failed to create application')
