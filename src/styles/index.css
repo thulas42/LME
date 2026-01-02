@@ -307,6 +307,13 @@ body {
   background: var(--bg-secondary);
   border-radius: 8px;
   border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.activity-item:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary);
+  transform: translateY(-2px);
 }
 
 .activity-icon {
@@ -378,6 +385,13 @@ body {
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid var(--primary);
   border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.alert-card:hover {
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .alert-icon {
@@ -581,6 +595,13 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   border-left: 4px solid var(--border);
+  transition: all 0.2s;
+}
+
+.deal-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .deal-item.in-progress {
@@ -1030,6 +1051,13 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   border-left: 4px solid var(--border);
+  transition: all 0.2s;
+}
+
+.pipeline-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .pipeline-item.under-review {
@@ -1251,6 +1279,13 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   border-left: 4px solid var(--border);
+  transition: all 0.2s;
+}
+
+.document-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .document-item.approved {
@@ -1636,6 +1671,13 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   border-left: 4px solid var(--success);
+  transition: all 0.2s;
+}
+
+.green-loan-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .green-loan-header {

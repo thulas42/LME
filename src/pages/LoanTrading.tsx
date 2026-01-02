@@ -9,6 +9,7 @@ import ExportModal from '../components/ExportModal'
 export default function LoanTrading() {
   const [showFilters, setShowFilters] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleApplyFilters = (filters: any) => {
     console.log('Applying filters:', filters)
@@ -18,6 +19,12 @@ export default function LoanTrading() {
   const handleExport = (format: string) => {
     console.log('Exporting data as:', format)
     // In a real app, this would export the data
+  }
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+    console.log('Searching for:', e.target.value)
+    // In a real app, this would filter the displayed loans
   }
 
   return (
@@ -94,6 +101,8 @@ export default function LoanTrading() {
           type="text"
           placeholder="Search loans by borrower, sector, or loan ID..."
           className="search-input"
+          value={searchQuery}
+          onChange={handleSearch}
         />
       </div>
 

@@ -9,6 +9,7 @@ import ExportModal from '../components/ExportModal'
 export default function MarketIntelligence() {
   const [showFilters, setShowFilters] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleApplyFilters = (filters: any) => {
     console.log('Applying filters:', filters)
@@ -16,6 +17,12 @@ export default function MarketIntelligence() {
 
   const handleExport = (format: string) => {
     console.log('Exporting data as:', format)
+  }
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+    console.log('Searching for:', e.target.value)
+    // In a real app, this would filter the displayed data
   }
 
   return (
@@ -59,6 +66,8 @@ export default function MarketIntelligence() {
           type="text"
           placeholder="Search deals, borrowers, or sectors..."
           className="search-input"
+          value={searchQuery}
+          onChange={handleSearch}
         />
       </div>
 

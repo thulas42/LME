@@ -57,6 +57,11 @@ export default function DealPipeline() {
     }
   }
 
+  const handleDealClick = (deal: typeof deals[0]) => {
+    console.log('Viewing deal:', deal.name)
+    // In a real app, this would navigate to deal details or open a modal
+  }
+
   return (
     <div className="card">
       <div className="card-header">
@@ -67,7 +72,12 @@ export default function DealPipeline() {
           {deals.map((deal) => {
             const StatusIcon = getStatusIcon(deal.status)
             return (
-              <div key={deal.id} className={`deal-item ${deal.status}`}>
+              <div
+                key={deal.id}
+                className={`deal-item ${deal.status}`}
+                onClick={() => handleDealClick(deal)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="deal-header">
                   <div className="deal-title-section">
                     <StatusIcon className="deal-status-icon" />

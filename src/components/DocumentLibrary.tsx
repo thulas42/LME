@@ -44,6 +44,11 @@ export default function DocumentLibrary() {
     }
   }
 
+  const handleDocumentClick = (doc: typeof documents[0]) => {
+    console.log('Viewing document:', doc.name)
+    // In a real app, this would open the document viewer or editor
+  }
+
   return (
     <div className="card">
       <div className="card-header">
@@ -54,7 +59,12 @@ export default function DocumentLibrary() {
           {documents.map((doc) => {
             const StatusIcon = getStatusIcon(doc.status)
             return (
-              <div key={doc.id} className={`document-item ${doc.status}`}>
+              <div
+                key={doc.id}
+                className={`document-item ${doc.status}`}
+                onClick={() => handleDocumentClick(doc)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="document-header">
                   <FileText className="document-icon" />
                   <div className="document-info">

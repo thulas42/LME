@@ -8,6 +8,7 @@ import GenerateDocumentModal from '../components/GenerateDocumentModal'
 export default function DocumentManagement() {
   const [showUpload, setShowUpload] = useState(false)
   const [showGenerate, setShowGenerate] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleUpload = (file: File, metadata: any) => {
     console.log('Uploading document:', file.name, metadata)
@@ -17,6 +18,12 @@ export default function DocumentManagement() {
   const handleGenerate = (data: any) => {
     console.log('Generating document:', data)
     // In a real app, this would generate the document
+  }
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+    console.log('Searching documents:', e.target.value)
+    // In a real app, this would filter the displayed documents
   }
 
   return (
@@ -58,6 +65,8 @@ export default function DocumentManagement() {
           type="text"
           placeholder="Search documents, templates, or clauses..."
           className="search-input"
+          value={searchQuery}
+          onChange={handleSearch}
         />
       </div>
 

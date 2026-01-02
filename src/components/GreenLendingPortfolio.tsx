@@ -34,6 +34,11 @@ const greenLoans = [
 ]
 
 export default function GreenLendingPortfolio() {
+  const handleLoanClick = (loan: typeof greenLoans[0]) => {
+    console.log('Viewing green loan:', loan.name)
+    // In a real app, this would navigate to loan details
+  }
+
   return (
     <div className="card">
       <div className="card-header">
@@ -42,7 +47,12 @@ export default function GreenLendingPortfolio() {
       <div className="card-body">
         <div className="green-loan-list">
           {greenLoans.map((loan) => (
-            <div key={loan.id} className="green-loan-item">
+            <div
+              key={loan.id}
+              className="green-loan-item"
+              onClick={() => handleLoanClick(loan)}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="green-loan-header">
                 <Leaf className="green-icon" />
                 <div className="green-loan-info">

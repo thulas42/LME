@@ -52,7 +52,14 @@ export default function Dashboard() {
       </div>
 
       <div className="alerts-section">
-        <div className="alert-card">
+        <div
+          className="alert-card"
+          onClick={() => {
+            console.log('Viewing market opportunity')
+            // In a real app, this would navigate to the opportunity details
+          }}
+          style={{ cursor: 'pointer' }}
+        >
           <AlertCircle className="alert-icon" />
           <div className="alert-content">
             <h3>Market Opportunity</h3>

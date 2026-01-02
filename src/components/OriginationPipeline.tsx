@@ -34,6 +34,11 @@ const applications = [
 ]
 
 export default function OriginationPipeline() {
+  const handleApplicationClick = (app: typeof applications[0]) => {
+    console.log('Viewing application:', app.borrower)
+    // In a real app, this would navigate to application details
+  }
+
   return (
     <div className="card">
       <div className="card-header">
@@ -42,7 +47,12 @@ export default function OriginationPipeline() {
       <div className="card-body">
         <div className="pipeline-list">
           {applications.map((app) => (
-            <div key={app.id} className={`pipeline-item ${app.status}`}>
+            <div
+              key={app.id}
+              className={`pipeline-item ${app.status}`}
+              onClick={() => handleApplicationClick(app)}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="pipeline-header">
                 <div className="pipeline-title-section">
                   <FileText className="pipeline-icon" />

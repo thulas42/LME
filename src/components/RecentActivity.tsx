@@ -40,6 +40,11 @@ const activities = [
 ]
 
 export default function RecentActivity() {
+  const handleActivityClick = (activity: typeof activities[0]) => {
+    console.log('Viewing activity:', activity.title)
+    // In a real app, this would navigate to the activity details
+  }
+
   return (
     <div className="card">
       <div className="card-header">
@@ -50,7 +55,12 @@ export default function RecentActivity() {
           {activities.map((activity) => {
             const Icon = activity.icon
             return (
-              <div key={activity.id} className="activity-item">
+              <div
+                key={activity.id}
+                className="activity-item"
+                onClick={() => handleActivityClick(activity)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className={`activity-icon ${activity.status}`}>
                   <Icon />
                 </div>
