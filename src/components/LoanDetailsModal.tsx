@@ -1,4 +1,6 @@
-import { X, FileText, Calendar, Users, DollarSign, TrendingUp, Eye } from 'lucide-react'
+import { useState } from 'react'
+import { X, FileText, Calendar, Users, DollarSign, TrendingUp, Eye, CheckCircle } from 'lucide-react'
+import { tradingAPI } from '../services/api'
 
 interface LoanDetailsModalProps {
   onClose: () => void
@@ -17,6 +19,30 @@ interface LoanDetailsModalProps {
 }
 
 export default function LoanDetailsModal({ onClose, loan }: LoanDetailsModalProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [interestExpressed, setInterestExpressed] = useState(false)
+
+  const handleExpressInterest = async () => {
+    try {
+      setIsSubmitting(true)
+      await tradingAPI.expressInterest({
+        loanId: loan.loan_id || loan.loanId,
+        borrower: loan.borrower,
+        amount: typeof loan.amount === 'number' ? loan.amount : null,
+        message: `Interest expressed in ${loan.borrower} loan`,
+      })
+      setInterestExpressed(true)
+      setTimeout(() => {
+        setInterestExpressed(false)
+        onClose()
+      }, 2000)
+    } catch (error: any) {
+      console.error('Error expressing interest:', error)
+      alert(error.response?.data?.error || 'Failed to express interest. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content loan-details-modal" onClick={(e) => e.stopPropagation()}>
@@ -111,9 +137,20 @@ export default function LoanDetailsModal({ onClose, loan }: LoanDetailsModalProp
             <button className="btn btn-secondary" onClick={onClose}>
               Close
             </button>
-            <button className="btn btn-primary">
-              Express Interest
-            </button>
+            {interestExpressed ? (
+              <button className="btn btn-success" disabled>
+                <CheckCircle className="btn-icon" />
+                Interest Expressed!
+              </button>
+            ) : (
+              <button 
+                className="btn btn-primary" 
+                onClick={handleExpressInterest}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Express Interest'}
+              </button>
+            )}
           </div>
         </div>
       </div>

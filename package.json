@@ -14,7 +14,8 @@
     "build:server": "cd server && npm run build",
     "preview": "vite preview",
     "package": "electron-builder",
-    "install:all": "npm install && cd server && npm install"
+    "install:all": "npm install && cd server && npm install",
+    "deploy:setup": "echo 'Follow instructions in DEPLOYMENT.md'"
   },
   "keywords": [
     "loan-markets",

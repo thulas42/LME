@@ -50,6 +50,7 @@ export const tradingAPI = {
   getActivity: (limit?: number) => api.get('/trading/activity', { params: { limit } }),
   recordActivity: (data: any) => api.post('/trading/activity', data),
   getStats: () => api.get('/trading/stats/summary'),
+  expressInterest: (data: any) => api.post('/trading/interests', data),
 }
 
 // Market Intelligence API

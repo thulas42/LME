@@ -19,6 +19,7 @@ interface Database {
   trading_activity: any[]
   green_loans: any[]
   esg_targets: any[]
+  interests: any[]
 }
 
 let db: Database = {
@@ -30,6 +31,7 @@ let db: Database = {
   trading_activity: [],
   green_loans: [],
   esg_targets: [],
+  interests: [],
 }
 
 // Load database from file
@@ -37,7 +39,19 @@ function loadDatabase(): Database {
   if (fs.existsSync(dbPath)) {
     try {
       const data = fs.readFileSync(dbPath, 'utf-8')
-      return JSON.parse(data)
+      const loaded = JSON.parse(data)
+      // Ensure all required arrays exist
+      return {
+        applications: loaded.applications || [],
+        deals: loaded.deals || [],
+        documents: loaded.documents || [],
+        templates: loaded.templates || [],
+        loan_listings: loaded.loan_listings || [],
+        trading_activity: loaded.trading_activity || [],
+        green_loans: loaded.green_loans || [],
+        esg_targets: loaded.esg_targets || [],
+        interests: loaded.interests || [],
+      }
     } catch (error) {
       console.error('Error loading database:', error)
       return db
@@ -190,6 +204,20 @@ export const database = {
     }
     saveDatabase()
     return db.esg_targets[0]
+  },
+
+  // Interests
+  createInterest: (data: any) => {
+    const interest = { id: uuidv4(), ...data, created_at: new Date().toISOString(), status: 'pending' }
+    db.interests.push(interest)
+    saveDatabase()
+    return interest
+  },
+  getInterests: (loanId?: string) => {
+    if (loanId) {
+      return db.interests.filter(i => i.loan_id === loanId)
+    }
+    return db.interests
   },
 }
 

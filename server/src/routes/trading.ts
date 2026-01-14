@@ -138,4 +138,63 @@ router.get('/stats/summary', (req, res) => {
   }
 })
 
+/**
+ * @swagger
+ * /api/trading/interests:
+ *   post:
+ *     summary: Express interest in a loan listing
+ *     tags: [Trading]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - loanId
+ *               - borrower
+ *             properties:
+ *               loanId:
+ *                 type: string
+ *                 example: LN-2024-001
+ *               borrower:
+ *                 type: string
+ *                 example: TechCorp Industries
+ *               amount:
+ *                 type: number
+ *                 example: 5000000
+ *               message:
+ *                 type: string
+ *                 example: Interested in purchasing this loan
+ *     responses:
+ *       201:
+ *         description: Interest expressed successfully
+ */
+router.post('/interests', (req, res) => {
+  try {
+    const {
+      loanId,
+      borrower,
+      amount,
+      message,
+    } = req.body
+
+    if (!loanId || !borrower) {
+      return res.status(400).json({ error: 'Missing required fields: loanId and borrower' })
+    }
+
+    const interest = database.createInterest({
+      loan_id: loanId,
+      borrower,
+      amount: amount || null,
+      message: message || '',
+      interested_party: 'Current User', // In a real app, this would come from auth
+    })
+
+    res.status(201).json(interest)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 export default router
