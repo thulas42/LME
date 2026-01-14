@@ -66,7 +66,7 @@ app.get('/api/health', (req, res) => {
 })
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction): void => {
   console.error('Error:', err)
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error',
